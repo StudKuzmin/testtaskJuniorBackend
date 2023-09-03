@@ -9,7 +9,7 @@ type UserReqs struct {
 }
 
 func (userReqs UserReqs) GetRefreshToken() {
-	userReqs.Ee.GET("/get", GetRefreshToken)
+	userReqs.Ee.GET("/get", GetRefreshToken) // TODO исправить подключение/отключение БД на каждое обращение по маршруту GET /getToken
 }
 func (userReqs UserReqs) PostGetToken() {
 	userReqs.Ee.POST("/post", PostGetToken)

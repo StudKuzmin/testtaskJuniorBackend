@@ -2,7 +2,7 @@ package dbservice
 
 import (
 	"context"
-	"fmt"
+	"errors"
 
 	"go.mongodb.org/mongo-driver/bson"
 	// "go.mongodb.org/mongo-driver/mongo/readpref"
@@ -27,15 +27,12 @@ func(dbservice *DBservice) Connect() {
 	if dbservice.err != nil { 
 		panic(dbservice.err) 
 	}
-	fmt.Printf("%T\n", &dbservice.client) 
-
-	dbNames, err := dbservice.client.ListDatabaseNames(dbservice.ctx, bson.M{}) 
-	if err != nil { 
-		panic(err) 
-	} 
-	fmt.Println(dbNames) 
+	err := dbservice.client.Ping(dbservice.ctx, nil)
+	if err == nil{
+		println("MongoDB: ping ok..")
+	}
 }
-func(dbservice *DBservice) FindOne(param string) entities.EUser {
+func(dbservice *DBservice) FindOne(param string) (entities.EUser, error) {
 	coll := dbservice.client.Database("newdb").Collection("users")
 	filter := bson.D{{"guid", param}}
 
@@ -43,10 +40,10 @@ func(dbservice *DBservice) FindOne(param string) entities.EUser {
 	dbservice.err = coll.FindOne(context.TODO(), filter).Decode(&euser)
 
 	if dbservice.err != nil && dbservice.err == mongo.ErrNoDocuments {
-		println("DOCUMENT NOT FOUND")
+		return *new(entities.EUser), errors.New("DOCUMENT NOT FOUND")
 	}
 
-	return euser
+	return euser, nil
 }
 func(dbservice *DBservice) Disconnect() {
 	dbservice.client.Disconnect(dbservice.ctx)

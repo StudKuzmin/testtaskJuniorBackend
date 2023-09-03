@@ -2,12 +2,11 @@ package userreqs
 
 import (
 	"net/http"
-    "encoding/json"
 
 	"github.com/labstack/echo/v4"
 
-    "testtask2/database"
-    "testtask2/database/entities"
+	"testtask2/model"
+
 )
 
 type UserResponse struct {
@@ -18,19 +17,19 @@ type UserResponse struct {
 func GetRefreshToken(c echo.Context) error {
     inputGuid := c.QueryParam("guid")
 
-    if database.Database(inputGuid) {
-        println("START GENERATE TOKEN")
-    } else {
-        eerror := entities.EError{Message: "DOCUMENT NOT FOUND", Code: 404}
-        eerrorJson, _ := json.Marshal(eerror)
-        eerrorJsonString := string(eerrorJson)
-        return c.String(http.StatusOK, eerrorJsonString)
-    }
+    md := model.ModelService{}
+	md.ConnectToDB() // TODO исправить подключение/отключение БД на каждое обращение по маршруту GET /getToken
+	defer md.DisconnectFromDB() // TODO исправить подключение/отключение БД на каждое обращение по маршруту GET /getToken
 
-    eerror := entities.EError{Message: "Internal Server Error", Code: 500}
-    eerrorJson, _ := json.Marshal(eerror)
-    eerrorJsonString := string(eerrorJson)
-    return c.String(http.StatusOK, eerrorJsonString)
+    errorJsonString, err := md.CheckGuid(inputGuid) // Смотрим, есть ли в БД документ с таким guid
+
+    println("HTTP STATUS: " + errorJsonString)
+    if err==nil{
+        token := md.GenerateToken(inputGuid)
+        return c.String(http.StatusOK, token) 
+    } else {
+        return c.String(http.StatusOK, errorJsonString)
+    }
 }
 
 func PostGetToken(c echo.Context) error {

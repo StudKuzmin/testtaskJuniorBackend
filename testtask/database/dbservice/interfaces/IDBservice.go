@@ -6,6 +6,6 @@ import (
 
 type IDBservice interface {
 	Connect()
-	FindOne(param string) entities.EUser
+	FindOne(param string) (entities.EUser, error)
 	Disconnect()
 }
