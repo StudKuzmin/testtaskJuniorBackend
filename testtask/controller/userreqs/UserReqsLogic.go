@@ -23,10 +23,9 @@ func GetRefreshToken(c echo.Context) error {
 
     errorJsonString, err := md.CheckGuid(inputGuid) // Смотрим, есть ли в БД документ с таким guid
 
-    println("HTTP STATUS: " + errorJsonString)
     if err==nil{
-        token := md.GenerateToken(inputGuid)
-        return c.String(http.StatusOK, token) 
+        tokenJsonString := md.GenerateTokens(inputGuid)
+        return c.String(http.StatusOK, tokenJsonString) 
     } else {
         return c.String(http.StatusOK, errorJsonString)
     }

@@ -21,17 +21,23 @@ func(ts *TokenService) GetTokens() (string, string) {
 	return ts.accessToken, ts.refreshToken
 }
 
-func(ts *TokenService) GenerateToken(guid string) (string, error) {
-	exp := time.Now().Add(time.Hour).Unix() // Время действия токена 1 час
+func(ts *TokenService) GenerateTokens(guid string) (string, string, error) {
+	accessTokenExp := time.Now().Add(time.Hour).Unix() // Время действия токена 1 час
+	refreshTokenExp := time.Now().Add(72*time.Hour).Unix() // Время действия токена 3 дня
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS512, jwt.MapClaims{
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS512, jwt.MapClaims{
 		"guid": guid,
-		"exp": exp,
+		"exp": accessTokenExp,
+	})
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS512, jwt.MapClaims{
+		"guid": guid,
+		"exp": refreshTokenExp,
 	})
 
-	tokenString, err := token.SignedString(ts.secretKey)
+	accessTokenString, _ := accessToken.SignedString(ts.secretKey)
+	refreshTokenString, err := refreshToken.SignedString(ts.secretKey)
 
-	return tokenString, err
+	return accessTokenString, refreshTokenString, err
 }
 
 func(ts *TokenService) Valid(tokenString string) bool {
@@ -40,4 +46,17 @@ func(ts *TokenService) Valid(tokenString string) bool {
 	})
 	
 	return token.Valid
+}
+
+func(ts *TokenService) GetClaims(tokenString string) jwt.MapClaims {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return ts.secretKey, nil
+	})
+	if err != nil {
+        return nil
+    }
+
+    claims, _ := token.Claims.(jwt.MapClaims)
+	
+	return claims
 }

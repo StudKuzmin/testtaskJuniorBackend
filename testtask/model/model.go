@@ -3,7 +3,6 @@ package model
 import (
 	"encoding/json"
 	"errors"
-	"strconv"
 
 	"testtask2/database/dbservice"
 	"testtask2/database/dbservice/interfaces"
@@ -25,6 +24,7 @@ func (ms *ModelService) DisconnectFromDB(){
 }
 func (ms *ModelService) CheckGuid(inputGuid string) (string, error){
 	euser, _ := ms.dbservice.FindOne(inputGuid)
+
 	if !euser.Id.IsZero() {
 		eerror := entities.EError{Message: "SUCCESS", Code: 200}
         eerrorJson, _ := json.Marshal(eerror)
@@ -37,13 +37,18 @@ func (ms *ModelService) CheckGuid(inputGuid string) (string, error){
         return eerrorJsonString, errors.New("DOCUMENT NOT FOUND")
     }
 }
-func (ms *ModelService) GenerateToken(guid string) string{
+func (ms *ModelService) GenerateTokens(guid string) string {
 	ms.tokenservice = &tokenJwt.TokenService{}
 	ms.tokenservice.GenerateSecretKey()
 
-	tokenString, _ := ms.tokenservice.GenerateToken(guid)
-	println("token: " + tokenString)
-	println("valid: " + strconv.FormatBool(ms.tokenservice.Valid(tokenString)))
+	accessTokenString, refreshTokenString, _ := ms.tokenservice.GenerateTokens(guid)
+	etoken := entities.EToken{AccessToken: accessTokenString, RefreshToken: refreshTokenString}
 
-	return tokenString
+	etokenJson, _ := json.Marshal(etoken)
+	etokenJsonString := string(etokenJson)
+
+	// claims := ms.tokenservice.GetClaims(refreshTokenString)
+	// print("CLAIMS: "); println(claims["exp"].(float64)); println(claims["guid"].(string))
+	
+	return etokenJsonString
 }
